@@ -5,6 +5,10 @@ class ViewController: NSViewController {
     private var statusLabel: NSTextField!
     private var secretTextField: NSTextField!
     private var secretDisplay: NSTextView!
+    private var scrollView: NSScrollView!
+    private var imageView: NSImageView!
+    private var clearButton: NSButton!
+    private var isShowingImage: Bool = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -44,7 +48,7 @@ class ViewController: NSViewController {
         view.addSubview(titleLabel)
         
         // Status label
-        statusLabel = NSTextField(labelWithString: "Invisible during screen sharing (⌥⇧I to toggle)")
+        statusLabel = NSTextField(labelWithString: "Invisible during screen sharing (⌥⇧I to toggle, ⌥⇧S for screenshot)")
         statusLabel.textColor = NSColor.secondaryLabelColor
         statusLabel.isBezeled = false
         statusLabel.isEditable = false
@@ -66,12 +70,30 @@ class ViewController: NSViewController {
         secretDisplay.font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
         
         // Put text view in a scroll view
-        let scrollView = NSScrollView()
+        scrollView = NSScrollView()
         scrollView.documentView = secretDisplay
         scrollView.hasVerticalScroller = true
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.borderType = .bezelBorder
         view.addSubview(scrollView)
+        
+        // Image view for screenshots
+        imageView = NSImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.imageScaling = .scaleProportionallyUpOrDown
+        imageView.isHidden = true  // Hide by default
+        imageView.wantsLayer = true
+        imageView.layer?.borderWidth = 1
+        imageView.layer?.borderColor = NSColor.gray.cgColor
+        imageView.layer?.cornerRadius = 4
+        view.addSubview(imageView)
+        
+        // Clear button for screenshots
+        clearButton = NSButton(title: "Clear Screenshot", target: self, action: #selector(clearScreenshot))
+        clearButton.translatesAutoresizingMaskIntoConstraints = false
+        clearButton.bezelStyle = .rounded
+        clearButton.isHidden = true  // Hide by default
+        view.addSubview(clearButton)
         
         // Set up constraints
         NSLayoutConstraint.activate([
@@ -89,11 +111,56 @@ class ViewController: NSViewController {
             scrollView.topAnchor.constraint(equalTo: secretTextField.bottomAnchor, constant: 15),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 15),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -15),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -15)
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -15),
+            
+            // Image view constraints (same position as scroll view)
+            imageView.topAnchor.constraint(equalTo: secretTextField.bottomAnchor, constant: 15),
+            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 15),
+            imageView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -15),
+            imageView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -15),
+            
+            // Clear button
+            clearButton.topAnchor.constraint(equalTo: statusLabel.bottomAnchor, constant: 15),
+            clearButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -15),
         ])
         
         // Set up text field delegate
         secretTextField.delegate = self
+    }
+    
+    // Method to display a screenshot
+    func displayScreenshot(_ image: NSImage) {
+        // Hide the text view and text field, show the image view and clear button
+        scrollView.isHidden = true
+        secretTextField.isHidden = true
+        imageView.isHidden = false
+        clearButton.isHidden = false
+        
+        // Set the image
+        imageView.image = image
+        
+        // Update status label
+        statusLabel.stringValue = "Screenshot captured (⌥⇧I to toggle, ⌥⇧S for new screenshot)"
+        
+        // Update state
+        isShowingImage = true
+    }
+    
+    // Method to clear the screenshot and show notes
+    @objc func clearScreenshot() {
+        if isShowingImage {
+            // Hide the image view and clear button, show the text view and text field
+            scrollView.isHidden = false
+            secretTextField.isHidden = false
+            imageView.isHidden = true
+            clearButton.isHidden = true
+            
+            // Update state
+            isShowingImage = false
+            
+            // Update status label
+            statusLabel.stringValue = "Invisible during screen sharing (⌥⇧I to toggle, ⌥⇧S for screenshot)"
+        }
     }
 }
 
